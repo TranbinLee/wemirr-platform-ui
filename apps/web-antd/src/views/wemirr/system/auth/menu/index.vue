@@ -68,6 +68,9 @@ function handleDelete(node: any) {
           message: '删除成功',
           duration: 3,
         });
+        // 清空表单
+        menuFormRef.resetForm();
+        menuFormRef.resetValidate();
         loadMenu();
       });
     },
@@ -75,11 +78,32 @@ function handleDelete(node: any) {
 }
 
 async function loadMenu() {
+  // 保存当前展开的节点
+  const prevExpandedKeys = expandedKeys.value || [];
   await getAllMenusApi({}).then((ret) => {
     treeData.value = ret as any;
-    expandedKeys.value = ret
+    // 获取所有节点ID
+    const getAllNodeIds = (data: any[]): string[] => {
+      const ids: string[] = [];
+      data.forEach((item: any) => {
+        ids.push(item.id);
+        if (item.children) {
+          ids.push(...getAllNodeIds(item.children));
+        }
+      });
+      return ids;
+    };
+    const allNodeIds = getAllNodeIds(ret);
+    // 过滤掉已删除的节点，保留之前展开的节点
+    const validExpandedKeys = prevExpandedKeys.filter((key: string) =>
+      allNodeIds.includes(key),
+    );
+    // 合并：保留之前的展开状态 + 顶层节点
+    const topNodeIds = ret
       .filter((item: any) => item.parentId === '0')
       .map((item: any) => item.id);
+    const mergedKeys = new Set([...validExpandedKeys, ...topNodeIds]);
+    expandedKeys.value = Array.from(mergedKeys);
     menuFormRef.resetValidate();
   });
 }

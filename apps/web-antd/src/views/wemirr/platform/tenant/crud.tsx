@@ -342,6 +342,36 @@ export default function crud(
             col: { span: 24 },
           },
         },
+        webSite: {
+          title: '站点域名',
+          type: 'text',
+          column: { ellipsis: true, width: 250 },
+          form: {
+            value: 'localhost',
+            component: {
+              placeholder: '如: example.com 或 *.example.com',
+            },
+            help: '多个域名用逗号分隔，支持 * 通配符',
+            rules: [
+              { required: true, message: '站点域名不能为空' },
+              {
+                validator: async (rule: any, value: string) => {
+                  if (!value) return;
+                  const form = crudExpose?.getFormWrapperRef()?.form;
+                  const id = form?.id;
+                  const url = id
+                    ? `/iam/tenants/check-web-site?webSite=${encodeURIComponent(value)}&id=${id}`
+                    : `/iam/tenants/check-web-site?webSite=${encodeURIComponent(value)}`;
+                  const isDuplicate = await defHttp.get(url);
+                  if (isDuplicate) {
+                    throw new Error('站点域名已被其他租户使用');
+                  }
+                },
+                trigger: 'submit',
+              },
+            ],
+          },
+        },
         createTime: {
           title: '创建时间',
           type: ['datetime', 'wp-readonly-time'],
@@ -362,6 +392,7 @@ export default function crud(
                 'alias',
                 'type',
                 'status',
+                'webSite',
                 'creditCode',
                 'legalPersonName',
                 'area',

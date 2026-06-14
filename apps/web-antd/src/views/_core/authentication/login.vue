@@ -115,6 +115,9 @@ onMounted(async () => {
         },
       ]);
       formApi.setFieldValue('tenantCode', ret.tenantCode);
+    } else {
+      // 域名没有匹配到租户，跳转错误页
+      window.location.href = '/404';
     }
   });
 });
